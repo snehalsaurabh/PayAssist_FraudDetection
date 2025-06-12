@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from app.schemas import PaymentEvent, FraudDetectionResult, HealthCheck
 from app.logger import logger
 from app.config import settings
+from app.database import check_database_health, check_redis_health
 
 # Rate limiter
 limiter = Limiter(key_func=get_remote_address)
@@ -39,13 +40,23 @@ app.add_middleware(
 
 @app.get("/health", response_model=HealthCheck)
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint with real database connectivity testing"""
+    
+    # Check database connectivity
+    db_healthy, db_status = await check_database_health()
+    
+    # Check Redis connectivity  
+    redis_healthy, redis_status = await check_redis_health()
+    
+    # Determine overall health
+    overall_status = "healthy" if db_healthy else "unhealthy"
+    
     return HealthCheck(
-        status="healthy",
+        status=overall_status,
         timestamp=datetime.now(timezone.utc),
         version=settings.app_version,
-        database_status="connected",  # TODO: Add actual DB check
-        redis_status="connected"      # TODO: Add actual Redis check
+        database_status=db_status,
+        redis_status=redis_status
     )
 
 @app.post("/ingest-event", response_model=dict)

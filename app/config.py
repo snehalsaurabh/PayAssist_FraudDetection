@@ -3,6 +3,12 @@ from typing import Optional
 from pydantic_settings import BaseSettings
 from pydantic import field_validator, Field
 import secrets
+from pathlib import Path
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent.parent  # project root
+env_path = BASE_DIR / ".env"
+load_dotenv(env_path, override=True)  
 
 class Settings(BaseSettings):
     # Application Settings
@@ -82,7 +88,8 @@ class Settings(BaseSettings):
         return v
     
     model_config = {
-        "env_file": ".env",
+        "env_file": env_path,        # absolute path → always found
+        "env_file_encoding": "utf-8",
         "case_sensitive": False,
         "extra": "ignore",
     }
